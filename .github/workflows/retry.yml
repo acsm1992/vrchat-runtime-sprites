@@ -1,0 +1,21 @@
+name: Retry pending sprite publication
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: publication-retry
+  cancel-in-progress: false
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process saved publication work
+        env:
+          WORKER_SECRET: ${{ secrets.PUBLISH_WORKER_SECRET }}
+        run: |
+          if [ -z "$WORKER_SECRET" ]; then echo "Publication worker secret is not configured."; exit 1; fi
+          curl --fail-with-body --silent --show-error --max-time 240 \
+            -X POST -H "Authorization: Bearer $WORKER_SECRET" \
+            https://vrchat-sprite-injector.colt-45.chatgpt.site/api/worker
